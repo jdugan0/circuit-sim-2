@@ -6,3 +6,5 @@
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1020536751]
 script = ExtResource("1_hddm4")
+gridSize = 100.0
+gridColor = Color(0.15915868, 0, 0.8748153, 1)
