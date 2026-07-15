@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://c0103fhniiui0"]
+
+[ext_resource type="Script" uid="uid://dwp51tqd0l3in" path="res://scripts/Wire.cs" id="1_cq3tt"]
+
+[node name="Wire" type="Node2D" unique_id=1434701278]
+script = ExtResource("1_cq3tt")
+color = Color(0.85882354, 0, 0, 1)

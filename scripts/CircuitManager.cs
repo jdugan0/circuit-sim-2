@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 
 public partial class CircuitManager : Node2D
@@ -15,10 +16,89 @@ public partial class CircuitManager : Node2D
     [Export]
     private float gridLineWidth = 1.0f;
 
+    private DisjointSet<Vector2I> connected = new DisjointSet<Vector2I>();
+
+    [Export]
+    private PackedScene pin;
+
+    [Export]
+    private PackedScene wire;
+
+    private List<Pin> pins = new List<Pin>();
+    private List<Wire> wires = new List<Wire>();
+
+    private Dictionary<Vector2I, Node> occupied = new Dictionary<Vector2I, Node>();
+
+    private Vector2I? wireStart;
+    public static CircuitManager instance;
+
+    public override void _Ready()
+    {
+        instance = this;
+    }
+
     public override void _Process(double delta)
     {
-        base._Process(delta);
         QueueRedraw();
+        Vector2I mouseCell = PositionToCell(GetGlobalMousePosition());
+        // GD.Print(PositionToCell(GetGlobalMousePosition()));
+        GD.Print(connected.Roots().Count);
+        if (Input.IsActionJustPressed("click"))
+        {
+            if (!occupied.ContainsKey(mouseCell))
+            {
+                Pin n = pin.Instantiate<Pin>();
+                n.GlobalPosition = CellToPosition(mouseCell);
+                pins.Add(n);
+                AddChild(n);
+            }
+        }
+        if (Input.IsActionJustPressed("wire"))
+        {
+            if (!occupied.ContainsKey(mouseCell))
+            {
+                wireStart = mouseCell;
+            }
+        }
+        if (Input.IsActionJustReleased("wire"))
+        {
+            if (
+                wireStart.HasValue
+                && wireStart != mouseCell
+                && connected.Find(wireStart.Value) != connected.Find(mouseCell)
+            )
+            {
+                Wire n = wire.Instantiate<Wire>();
+                n.Start = wireStart.Value;
+                n.End = mouseCell;
+                wires.Add(n);
+                AddChild(n);
+                Vector2I d = n.End - n.Start;
+                if (d.X == 0 || d.Y == 0)
+                {
+                    Vector2I step = new(Math.Sign(d.X), Math.Sign(d.Y));
+                    Vector2I cur = n.Start;
+                    while (cur != n.End)
+                    {
+                        Vector2I next = cur + step;
+                        connected.Union(cur, next);
+                        cur = next;
+                    }
+                }
+            }
+            wireStart = null;
+        }
+    }
+
+    public Vector2I PositionToCell(Vector2 worldPosition)
+    {
+        Vector2 local = (worldPosition - origin) / gridSize + new Vector2(0.5f, 0.5f);
+        return new Vector2I(Mathf.RoundToInt(local.X), Mathf.RoundToInt(local.Y));
+    }
+
+    public Vector2 CellToPosition(Vector2I g)
+    {
+        return new Vector2(g.X - 0.5f, g.Y - 0.5f) * gridSize;
     }
 
     public override void _Draw()
