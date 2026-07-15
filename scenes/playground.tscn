@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bqion4jvessdr"]
+
+[ext_resource type="Script" uid="uid://cjlnouanrr08f" path="res://scripts/CircuitManager.cs" id="1_hddm4"]
+
+[node name="Playground" type="Node2D" unique_id=262439809]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1020536751]
+script = ExtResource("1_hddm4")
