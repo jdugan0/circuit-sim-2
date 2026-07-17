@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
 
 public partial class CircuitManager : Node2D
 {
@@ -30,6 +32,8 @@ public partial class CircuitManager : Node2D
 
     private Dictionary<Vector2I, Node> occupied = new Dictionary<Vector2I, Node>();
     private Dictionary<Vector2I, Pin> pins = new Dictionary<Vector2I, Pin>();
+
+    private Dictionary<Vector2I, double> nodeVoltages = new();
 
     private Vector2I? wireStart;
     public static CircuitManager instance;
@@ -69,6 +73,94 @@ public partial class CircuitManager : Node2D
         }
     }
 
+    public void Solve()
+    {
+        nodeVoltages.Clear();
+        var islandRoots = connected.Roots();
+        var nodeRoots = nodes.Roots();
+        Dictionary<Vector2I, List<Component>> islandToComps = new();
+        Dictionary<Vector2I, int> islandToNumVSource = new();
+        Dictionary<Vector2I, List<Vector2I>> islandToNode = new();
+        Dictionary<Vector2I, int> nodeToIndex = new();
+        // setup:
+        foreach (Component comp in components)
+        {
+            var island = connected.Find(PositionToCell(comp.pins[0].GlobalPosition));
+            if (!islandToComps.ContainsKey(island))
+            {
+                islandToComps[island] = new List<Component>();
+            }
+            islandToComps[island].Add(comp);
+            if (comp.computer.IsVSource)
+            {
+                islandToNumVSource[island] = islandToNumVSource.GetValueOrDefault(island) + 1;
+            }
+        }
+        foreach (var node in nodeRoots)
+        {
+            var island = connected.Find(node);
+            if (!islandToNode.ContainsKey(island))
+            {
+                islandToNode[island] = new List<Vector2I>();
+            }
+            nodeToIndex.Add(node, islandToNode[island].Count - 1);
+            islandToNode[island].Add(node);
+        }
+
+        // construct matrix
+
+        foreach (var island in islandRoots)
+        {
+            if (!islandToComps.ContainsKey(island))
+            {
+                continue;
+            }
+            var components = islandToComps[island];
+            int numVSources = islandToNumVSource[island];
+            var islandNodes = islandToNode[island];
+            int numNodes = islandNodes.Count - 1;
+            int size = numNodes + numVSources;
+            var A = Matrix<double>.Build.Dense(size, size);
+            Vector<double> b = Vector<double>.Build.Dense(size);
+            int vSourceIndex = 0;
+            foreach (var comp in components)
+            {
+                comp.computer.Stamp(
+                    A,
+                    b,
+                    nodeToIndex,
+                    comp.pins,
+                    nodes,
+                    numNodes,
+                    numVSources,
+                    vSourceIndex
+                );
+                if (comp.computer.IsVSource)
+                {
+                    vSourceIndex++;
+                }
+            }
+            // store solved data
+            Vector<double> x = A.Solve(b);
+            GD.Print(x);
+            foreach (var node in islandNodes)
+            {
+                int i = nodeToIndex[node];
+                if (i >= 0)
+                    nodeVoltages[node] = x[i];
+            }
+            int vs = 0;
+            foreach (var comp in components)
+            {
+                if (comp.computer.IsVSource)
+                {
+                    comp.Current = x[numNodes + vs];
+                    vs++;
+                }
+            }
+        }
+    }
+
     public void RecomputeDSU()
     {
         nodes.Clear();
@@ -82,6 +174,10 @@ public partial class CircuitManager : Node2D
                 while (cur != n.End)
                 {
                     Vector2I next = cur + step;
+                    if (next - step == n.End)
+                    {
+                        break;
+                    }
                     if (pins.ContainsKey(next))
                     {
                         nodes.Union(cur, next);
@@ -107,6 +203,7 @@ public partial class CircuitManager : Node2D
                 }
             }
         }
+        Solve();
     }
 
     public Vector2I PositionToCell(Vector2 worldPosition)
@@ -117,7 +214,7 @@ public partial class CircuitManager : Node2D
 
     public Vector2 CellToPosition(Vector2I g)
     {
-        return new Vector2(g.X - 0.5f, g.Y - 0.5f) * gridSize;
+        return new Vector2(g.X - 0.5f, g.Y - 0.5f) * gridSize + origin;
     }
 
     public override void _Draw()
