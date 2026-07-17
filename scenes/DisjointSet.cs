@@ -51,4 +51,10 @@ public class DisjointSet<T>
     }
 
     public bool Connected(T a, T b) => EqualityComparer<T>.Default.Equals(Find(a), Find(b));
+
+    public void Clear()
+    {
+        parent.Clear();
+        rank.Clear();
+    }
 }

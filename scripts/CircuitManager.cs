@@ -16,6 +16,7 @@ public partial class CircuitManager : Node2D
     [Export]
     private float gridLineWidth = 1.0f;
 
+    private DisjointSet<Vector2I> nodes = new DisjointSet<Vector2I>();
     private DisjointSet<Vector2I> connected = new DisjointSet<Vector2I>();
 
     [Export]
@@ -24,10 +25,11 @@ public partial class CircuitManager : Node2D
     [Export]
     private PackedScene wire;
 
-    private List<Pin> pins = new List<Pin>();
+    private List<Component> components = new();
     private List<Wire> wires = new List<Wire>();
 
     private Dictionary<Vector2I, Node> occupied = new Dictionary<Vector2I, Node>();
+    private Dictionary<Vector2I, Pin> pins = new Dictionary<Vector2I, Pin>();
 
     private Vector2I? wireStart;
     public static CircuitManager instance;
@@ -41,18 +43,6 @@ public partial class CircuitManager : Node2D
     {
         QueueRedraw();
         Vector2I mouseCell = PositionToCell(GetGlobalMousePosition());
-        // GD.Print(PositionToCell(GetGlobalMousePosition()));
-        GD.Print(connected.Roots().Count);
-        if (Input.IsActionJustPressed("click"))
-        {
-            if (!occupied.ContainsKey(mouseCell))
-            {
-                Pin n = pin.Instantiate<Pin>();
-                n.GlobalPosition = CellToPosition(mouseCell);
-                pins.Add(n);
-                AddChild(n);
-            }
-        }
         if (Input.IsActionJustPressed("wire"))
         {
             if (!occupied.ContainsKey(mouseCell))
@@ -65,7 +55,7 @@ public partial class CircuitManager : Node2D
             if (
                 wireStart.HasValue
                 && wireStart != mouseCell
-                && connected.Find(wireStart.Value) != connected.Find(mouseCell)
+                && nodes.Find(wireStart.Value) != nodes.Find(mouseCell)
             )
             {
                 Wire n = wire.Instantiate<Wire>();
@@ -73,20 +63,49 @@ public partial class CircuitManager : Node2D
                 n.End = mouseCell;
                 wires.Add(n);
                 AddChild(n);
-                Vector2I d = n.End - n.Start;
-                if (d.X == 0 || d.Y == 0)
+                RecomputeDSU();
+            }
+            wireStart = null;
+        }
+    }
+
+    public void RecomputeDSU()
+    {
+        nodes.Clear();
+        foreach (Wire n in wires)
+        {
+            Vector2I d = n.End - n.Start;
+            if (d.X == 0 || d.Y == 0)
+            {
+                Vector2I step = new(Math.Sign(d.X), Math.Sign(d.Y));
+                Vector2I cur = n.Start;
+                while (cur != n.End)
                 {
-                    Vector2I step = new(Math.Sign(d.X), Math.Sign(d.Y));
-                    Vector2I cur = n.Start;
-                    while (cur != n.End)
+                    Vector2I next = cur + step;
+                    if (pins.ContainsKey(next))
                     {
-                        Vector2I next = cur + step;
-                        connected.Union(cur, next);
+                        nodes.Union(cur, next);
                         cur = next;
                     }
                 }
             }
-            wireStart = null;
+            else
+            {
+                nodes.Union(n.Start, n.End);
+            }
+        }
+        connected.Clear();
+        foreach (Component comp in components)
+        {
+            Vector2I start = nodes.Find(PositionToCell(comp.pins[0].GlobalPosition));
+            foreach (Pin p in comp.pins)
+            {
+                Vector2I node = nodes.Find(PositionToCell(p.GlobalPosition));
+                if (node != start)
+                {
+                    connected.Union(node, start);
+                }
+            }
         }
     }
 
