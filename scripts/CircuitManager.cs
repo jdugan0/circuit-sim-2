@@ -87,88 +87,77 @@ public partial class CircuitManager : Node2D
         }
     }
 
+    private class Island
+    {
+        public readonly List<Component> Comps = new();
+        public readonly List<Vector2I> Nodes = new();
+        public readonly Dictionary<Vector2I, int> Index = new();
+        public int VSourceCount;
+
+        public int NumNodes => Nodes.Count - 1;
+        public int Size => NumNodes + VSourceCount;
+    }
+
+    private Vector2I NodeRoot(Vector2I cell) => nodes.Find(cell);
+
+    private Vector2I IslandKey(Vector2I cell) => connected.Find(nodes.Find(cell));
+
     public void Solve()
     {
         nodeVoltages.Clear();
-        var islandRoots = connected.Roots();
-        var nodeRoots = nodes.Roots();
-        Dictionary<Vector2I, List<Component>> islandToComps = new();
-        Dictionary<Vector2I, int> islandToNumVSource = new();
-        Dictionary<Vector2I, List<Vector2I>> islandToNode = new();
-        Dictionary<Vector2I, int> nodeToIndex = new();
-        // setup:
+        Dictionary<Vector2I, Island> islands = new();
+
+        Island IslandFor(Vector2I key)
+        {
+            if (!islands.TryGetValue(key, out var island))
+            {
+                island = new Island();
+                islands[key] = island;
+            }
+            return island;
+        }
+        foreach (var node in nodes.Roots())
+        {
+            var island = IslandFor(connected.Find(node));
+            island.Index[node] = island.Nodes.Count - 1;
+            island.Nodes.Add(node);
+        }
+
         foreach (Component comp in components)
         {
-            var island = connected.Find(nodes.Find(PositionToCell(comp.pins[0].GlobalPosition)));
-            if (!islandToComps.ContainsKey(island))
-            {
-                islandToComps[island] = new List<Component>();
-            }
-            islandToComps[island].Add(comp);
+            var island = IslandFor(IslandKey(comp.pins[0].Cell));
+            island.Comps.Add(comp);
             if (comp.computer.IsVSource)
-            {
-                islandToNumVSource[island] = islandToNumVSource.GetValueOrDefault(island) + 1;
-            }
+                island.VSourceCount++;
         }
-        foreach (var node in nodeRoots)
+        foreach (var island in islands.Values)
         {
-            var island = connected.Find(node);
-            if (!islandToNode.ContainsKey(island))
-            {
-                islandToNode[island] = new List<Vector2I>();
-            }
-            nodeToIndex.Add(node, islandToNode[island].Count - 1);
-            islandToNode[island].Add(node);
-        }
-
-        // construct matrix
-
-        foreach (var island in islandRoots)
-        {
-            if (!islandToComps.ContainsKey(island))
-            {
+            if (island.Comps.Count == 0)
                 continue;
-            }
-            var components = islandToComps[island];
-            int numVSources = islandToNumVSource.GetValueOrDefault(island);
-            var islandNodes = islandToNode[island];
-            int numNodes = islandNodes.Count - 1;
-            int size = numNodes + numVSources;
-            GD.Print(
-                $"[island {island}] nodeRoots={islandNodes.Count} numNodes={numNodes} numVSources={numVSources}"
-            );
-            foreach (var comp in components)
-            {
-                var i0 = nodeToIndex[nodes.Find(comp.pins[0].Cell)];
-                var i1 = nodeToIndex[nodes.Find(comp.pins[1].Cell)];
-                GD.Print($"  {comp.computer.GetType().Name}: pin0->idx {i0}, pin1->idx {i1}");
-            }
-            var A = Matrix<double>.Build.Dense(size, size);
-            Vector<double> b = Vector<double>.Build.Dense(size);
+
+            var A = Matrix<double>.Build.Dense(island.Size, island.Size);
+            Vector<double> b = Vector<double>.Build.Dense(island.Size);
             int vSourceIndex = 0;
-            foreach (var comp in components)
+            foreach (var comp in island.Comps)
             {
                 comp.computer.Stamp(
                     A,
                     b,
-                    nodeToIndex,
+                    island.Index,
                     comp.pins,
                     nodes,
-                    numNodes,
-                    numVSources,
+                    island.NumNodes,
+                    island.VSourceCount,
                     vSourceIndex
                 );
                 if (comp.computer.IsVSource)
-                {
                     vSourceIndex++;
-                }
             }
-            GD.Print(A);
-            // store solved data
+
             Vector<double> x = A.Solve(b);
-            foreach (var node in islandNodes)
+            foreach (var node in island.Nodes)
             {
-                int i = nodeToIndex[node];
+                int i = island.Index[node];
                 if (i >= 0)
                 {
                     nodeVoltages[node] = x[i];
@@ -176,11 +165,11 @@ public partial class CircuitManager : Node2D
                 }
             }
             int vs = 0;
-            foreach (var comp in components)
+            foreach (var comp in island.Comps)
             {
                 if (comp.computer.IsVSource)
                 {
-                    comp.Current = x[numNodes + vs];
+                    comp.Current = x[island.NumNodes + vs];
                     GD.Print($"I_{vs}: {comp.Current}");
                     vs++;
                 }
@@ -222,8 +211,8 @@ public partial class CircuitManager : Node2D
             );
         foreach (Component comp in components)
         {
-            var c0 = PositionToCell(comp.pins[0].GlobalPosition);
-            var c1 = PositionToCell(comp.pins[1].GlobalPosition);
+            var c0 = comp.pins[0].Cell;
+            var c1 = comp.pins[1].Cell;
             GD.Print(
                 $"{comp.computer.GetType().Name}: pin0 cell {c0} root {nodes.Find(c0)}, pin1 cell {c1} root {nodes.Find(c1)}"
             );
@@ -231,10 +220,10 @@ public partial class CircuitManager : Node2D
         connected.Clear();
         foreach (Component comp in components)
         {
-            Vector2I start = nodes.Find(PositionToCell(comp.pins[0].GlobalPosition));
+            Vector2I start = NodeRoot(comp.pins[0].Cell);
             foreach (Pin p in comp.pins)
             {
-                Vector2I node = nodes.Find(PositionToCell(p.GlobalPosition));
+                Vector2I node = NodeRoot(p.Cell);
                 if (node != start)
                 {
                     connected.Union(node, start);
