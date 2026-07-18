@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://cjlnouanrr08f" path="res://scripts/CircuitManager.cs" id="1_hddm4"]
 [ext_resource type="PackedScene" uid="uid://tl0rydhmr8nr" path="res://prefabs/Pin.tscn" id="2_qchbg"]
 [ext_resource type="PackedScene" uid="uid://c0103fhniiui0" path="res://prefabs/Wire.tscn" id="3_kddj0"]
+[ext_resource type="PackedScene" uid="uid://bm0cbk6hla6cg" path="res://prefabs/Components/Resistor.tscn" id="4_mm0a5"]
+[ext_resource type="PackedScene" uid="uid://iq36c27tnf6p" path="res://prefabs/Components/Battery.tscn" id="5_o6wi6"]
 
 [node name="Playground" type="Node2D" unique_id=262439809]
 script = ExtResource("1_hddm4")
@@ -11,5 +13,7 @@ gridColor = Color(0.49570423, 0.38142622, 0.8218632, 1)
 gridLineWidth = 5.0
 pin = ExtResource("2_qchbg")
 wire = ExtResource("3_kddj0")
+resistor = ExtResource("4_mm0a5")
+battery = ExtResource("5_o6wi6")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1020536751]

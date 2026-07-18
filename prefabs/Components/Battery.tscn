@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://iq36c27tnf6p"]
+
+[ext_resource type="PackedScene" uid="uid://md71ukm0qmjy" path="res://prefabs/Component.tscn" id="1_tdeu4"]
+[ext_resource type="Script" uid="uid://crungwx32pvjf" path="res://scripts/Components/VoltageSourceComponent.cs" id="2_7jmgg"]
+[ext_resource type="PackedScene" uid="uid://tl0rydhmr8nr" path="res://prefabs/Pin.tscn" id="2_phjh6"]
+
+[sub_resource type="Resource" id="Resource_oogyp"]
+script = ExtResource("2_7jmgg")
+V = 10.0
+metadata/_custom_type_script = "uid://crungwx32pvjf"
+
+[node name="Component" unique_id=1389737135 node_paths=PackedStringArray("pins") instance=ExtResource("1_tdeu4")]
+pins = [NodePath("Pin"), NodePath("Pin2")]
+computer = SubResource("Resource_oogyp")
+
+[node name="Pin" parent="." index="0" unique_id=1605041261 node_paths=PackedStringArray("parent") instance=ExtResource("2_phjh6")]
+position = Vector2(-50, 0)
+parent = NodePath("..")
+
+[node name="Pin2" parent="." index="1" unique_id=448029815 node_paths=PackedStringArray("parent") instance=ExtResource("2_phjh6")]
+position = Vector2(50, 0)
+parent = NodePath("..")

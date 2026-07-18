@@ -30,13 +30,19 @@ public partial class CircuitManager : Node2D
     private List<Component> components = new();
     private List<Wire> wires = new List<Wire>();
 
-    private Dictionary<Vector2I, Node> occupied = new Dictionary<Vector2I, Node>();
+    private Dictionary<Vector2I, Component> occupied = new Dictionary<Vector2I, Component>();
     private Dictionary<Vector2I, Pin> pins = new Dictionary<Vector2I, Pin>();
 
     private Dictionary<Vector2I, double> nodeVoltages = new();
 
     private Vector2I? wireStart;
     public static CircuitManager instance;
+
+    [Export]
+    public PackedScene resistor;
+
+    [Export]
+    public PackedScene battery;
 
     public override void _Ready()
     {
@@ -45,6 +51,14 @@ public partial class CircuitManager : Node2D
 
     public override void _Process(double delta)
     {
+        if (Input.IsActionJustPressed("R"))
+        {
+            PlaceComponent(resistor);
+        }
+        if (Input.IsActionJustPressed("B"))
+        {
+            PlaceComponent(battery);
+        }
         QueueRedraw();
         Vector2I mouseCell = PositionToCell(GetGlobalMousePosition());
         if (Input.IsActionJustPressed("wire"))
@@ -85,7 +99,7 @@ public partial class CircuitManager : Node2D
         // setup:
         foreach (Component comp in components)
         {
-            var island = connected.Find(PositionToCell(comp.pins[0].GlobalPosition));
+            var island = connected.Find(nodes.Find(PositionToCell(comp.pins[0].GlobalPosition)));
             if (!islandToComps.ContainsKey(island))
             {
                 islandToComps[island] = new List<Component>();
@@ -116,10 +130,19 @@ public partial class CircuitManager : Node2D
                 continue;
             }
             var components = islandToComps[island];
-            int numVSources = islandToNumVSource[island];
+            int numVSources = islandToNumVSource.GetValueOrDefault(island);
             var islandNodes = islandToNode[island];
             int numNodes = islandNodes.Count - 1;
             int size = numNodes + numVSources;
+            GD.Print(
+                $"[island {island}] nodeRoots={islandNodes.Count} numNodes={numNodes} numVSources={numVSources}"
+            );
+            foreach (var comp in components)
+            {
+                var i0 = nodeToIndex[nodes.Find(comp.pins[0].Cell)];
+                var i1 = nodeToIndex[nodes.Find(comp.pins[1].Cell)];
+                GD.Print($"  {comp.computer.GetType().Name}: pin0->idx {i0}, pin1->idx {i1}");
+            }
             var A = Matrix<double>.Build.Dense(size, size);
             Vector<double> b = Vector<double>.Build.Dense(size);
             int vSourceIndex = 0;
@@ -140,14 +163,17 @@ public partial class CircuitManager : Node2D
                     vSourceIndex++;
                 }
             }
+            GD.Print(A);
             // store solved data
             Vector<double> x = A.Solve(b);
-            GD.Print(x);
             foreach (var node in islandNodes)
             {
                 int i = nodeToIndex[node];
                 if (i >= 0)
+                {
                     nodeVoltages[node] = x[i];
+                    GD.Print($"V_{i}: {x[i]}");
+                }
             }
             int vs = 0;
             foreach (var comp in components)
@@ -155,40 +181,52 @@ public partial class CircuitManager : Node2D
                 if (comp.computer.IsVSource)
                 {
                     comp.Current = x[numNodes + vs];
+                    GD.Print($"I_{vs}: {comp.Current}");
                     vs++;
                 }
             }
+            GD.Print("-------");
         }
+        GD.Print("---END_RUN---");
     }
 
     public void RecomputeDSU()
     {
         nodes.Clear();
-        foreach (Wire n in wires)
+        foreach (Wire w in wires)
         {
-            Vector2I d = n.End - n.Start;
+            Vector2I d = w.End - w.Start;
             if (d.X == 0 || d.Y == 0)
             {
                 Vector2I step = new(Math.Sign(d.X), Math.Sign(d.Y));
-                Vector2I cur = n.Start;
-                while (cur != n.End)
+                Vector2I cur = w.Start;
+                Vector2I prev = cur;
+                while (prev != w.End)
                 {
-                    Vector2I next = cur + step;
-                    if (next - step == n.End)
-                    {
-                        break;
-                    }
+                    Vector2I next = prev + step;
                     if (pins.ContainsKey(next))
                     {
                         nodes.Union(cur, next);
                         cur = next;
                     }
+                    prev = next;
                 }
             }
-            else
-            {
-                nodes.Union(n.Start, n.End);
-            }
+            nodes.Union(w.Start, w.End);
+        }
+        GD.Print("=== RecomputeDSU ===");
+        GD.Print($"pins cells: {string.Join(", ", pins.Keys)}");
+        foreach (Wire w in wires)
+            GD.Print(
+                $"wire {w.Start} -> {w.End}  (startIsPin={pins.ContainsKey(w.Start)}, endIsPin={pins.ContainsKey(w.End)})"
+            );
+        foreach (Component comp in components)
+        {
+            var c0 = PositionToCell(comp.pins[0].GlobalPosition);
+            var c1 = PositionToCell(comp.pins[1].GlobalPosition);
+            GD.Print(
+                $"{comp.computer.GetType().Name}: pin0 cell {c0} root {nodes.Find(c0)}, pin1 cell {c1} root {nodes.Find(c1)}"
+            );
         }
         connected.Clear();
         foreach (Component comp in components)
@@ -215,6 +253,26 @@ public partial class CircuitManager : Node2D
     public Vector2 CellToPosition(Vector2I g)
     {
         return new Vector2(g.X - 0.5f, g.Y - 0.5f) * gridSize + origin;
+    }
+
+    public void PlaceComponent(PackedScene p)
+    {
+        Vector2I cell = PositionToCell(GetGlobalMousePosition());
+        if (occupied.ContainsKey(cell))
+        {
+            return;
+        }
+        Component c = p.Instantiate<Component>();
+        components.Add(c);
+        c.GlobalPosition = CellToPosition(cell);
+        AddChild(c);
+        occupied.Add(cell, c);
+        foreach (Pin pin in c.pins)
+        {
+            GD.Print(pin.Cell);
+            pins.Add(pin.Cell, pin);
+        }
+        RecomputeDSU();
     }
 
     public override void _Draw()
