@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://md71ukm0qmjy"]
 
 [ext_resource type="Script" uid="uid://c5mjq32bwjm61" path="res://scripts/Component.cs" id="1_e1eo5"]
+[ext_resource type="PackedScene" uid="uid://tl0rydhmr8nr" path="res://prefabs/Pin.tscn" id="2_38uhy"]
 
-[node name="Component" type="Node2D" unique_id=1389737135 node_paths=PackedStringArray("pins")]
+[node name="Component" type="Node2D" unique_id=1389737135]
 script = ExtResource("1_e1eo5")
-pins = []
+pin = ExtResource("2_38uhy")

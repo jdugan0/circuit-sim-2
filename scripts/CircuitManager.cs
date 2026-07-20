@@ -10,7 +10,7 @@ public partial class CircuitManager : Node2D
     private Vector2 origin;
 
     [Export]
-    private float gridSize;
+    public float gridSize;
 
     [Export]
     private Color gridColor = new Color(0.3f, 0.3f, 0.3f);

@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bm0cbk6hla6cg"]
 
 [ext_resource type="PackedScene" uid="uid://md71ukm0qmjy" path="res://prefabs/Component.tscn" id="1_d353e"]
-[ext_resource type="PackedScene" uid="uid://tl0rydhmr8nr" path="res://prefabs/Pin.tscn" id="2_7fh5u"]
 [ext_resource type="Script" uid="uid://bp7mly0xhdu84" path="res://scripts/Components/ResistorComponent.cs" id="2_ijatl"]
 
 [sub_resource type="Resource" id="Resource_48g0s"]
@@ -9,14 +8,6 @@ script = ExtResource("2_ijatl")
 R = 10.0
 metadata/_custom_type_script = "uid://bp7mly0xhdu84"
 
-[node name="Component" unique_id=1389737135 node_paths=PackedStringArray("pins") instance=ExtResource("1_d353e")]
-pins = [NodePath("Pin"), NodePath("Pin2")]
+[node name="Component" unique_id=1389737135 instance=ExtResource("1_d353e")]
+pinResources = Array[Vector2i]([Vector2i(1, 0), Vector2i(-1, 0)])
 computer = SubResource("Resource_48g0s")
-
-[node name="Pin" parent="." index="0" unique_id=1605041261 node_paths=PackedStringArray("parent") instance=ExtResource("2_7fh5u")]
-position = Vector2(-50, 0)
-parent = NodePath("..")
-
-[node name="Pin2" parent="." index="1" unique_id=448029815 node_paths=PackedStringArray("parent") instance=ExtResource("2_7fh5u")]
-position = Vector2(50, 0)
-parent = NodePath("..")

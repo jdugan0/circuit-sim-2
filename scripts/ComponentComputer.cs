@@ -13,7 +13,7 @@ public partial class ComponentComputer : Resource
         Matrix<double> A,
         Vector<double> b,
         Dictionary<Vector2I, int> nodeIndex,
-        Pin[] pins,
+        List<Pin> pins,
         DisjointSet<Vector2I> nodes,
         int n,
         int m,
