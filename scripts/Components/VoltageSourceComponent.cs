@@ -20,7 +20,9 @@ public partial class VoltageSourceComponent : ComponentComputer
         DisjointSet<Vector2I> nodes,
         int n,
         int m,
-        int vSourceIndex
+        int vSourceIndex,
+        Component state,
+        double delta
     )
     {
         var pos = nodeIndex[nodes.Find(pins[0].Cell)];
@@ -37,5 +39,14 @@ public partial class VoltageSourceComponent : ComponentComputer
             A[row, neg] -= 1;
         }
         b[row] = V;
+    }
+
+    public override double ComputeVoltage(
+        List<Pin> pins,
+        DisjointSet<Vector2I> nodes,
+        Dictionary<Vector2I, double> nodeVoltages
+    )
+    {
+        return V;
     }
 }

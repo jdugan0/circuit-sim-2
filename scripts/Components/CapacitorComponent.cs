@@ -5,10 +5,10 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 
 [GlobalClass]
-public partial class ResistorComponent : ComponentComputer
+public partial class CapacitorComponent : ComponentComputer
 {
     [Export]
-    public double R;
+    public double C;
 
     public override void Stamp(
         Matrix<double> A,
@@ -23,9 +23,15 @@ public partial class ResistorComponent : ComponentComputer
         double delta
     )
     {
+        double g = C / delta;
+        double Ieq = g * state.V;
         var n1 = nodeIndex[nodes.Find(pins[0].Cell)];
         var n2 = nodeIndex[nodes.Find(pins[1].Cell)];
-        double g = 1.0 / R;
+        if (n1 >= 0)
+            b[n1] += Ieq;
+        if (n2 >= 0)
+            b[n2] -= Ieq;
+
         if (n1 >= 0)
             A[n1, n1] += g;
         if (n2 >= 0)
@@ -35,16 +41,5 @@ public partial class ResistorComponent : ComponentComputer
             A[n1, n2] -= g;
             A[n2, n1] -= g;
         }
-    }
-
-    public override double ComputeVoltage(
-        List<Pin> pins,
-        DisjointSet<Vector2I> nodes,
-        Dictionary<Vector2I, double> nodeVoltages
-    )
-    {
-        var v1 = nodeVoltages[nodes.Find(pins[0].Cell)];
-        var v2 = nodeVoltages[nodes.Find(pins[1].Cell)];
-        return v1 - v2;
     }
 }

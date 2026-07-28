@@ -53,11 +53,11 @@ public partial class CircuitManager : Node2D
     {
         if (Input.IsActionJustPressed("R"))
         {
-            PlaceComponent(resistor);
+            PlaceComponent(resistor, delta);
         }
         if (Input.IsActionJustPressed("B"))
         {
-            PlaceComponent(battery);
+            PlaceComponent(battery, delta);
         }
         QueueRedraw();
         Vector2I mouseCell = PositionToCell(GetGlobalMousePosition());
@@ -81,7 +81,7 @@ public partial class CircuitManager : Node2D
                 n.End = mouseCell;
                 wires.Add(n);
                 AddChild(n);
-                RecomputeDSU();
+                RecomputeDSU(delta);
             }
             wireStart = null;
         }
@@ -102,7 +102,7 @@ public partial class CircuitManager : Node2D
 
     private Vector2I IslandKey(Vector2I cell) => connected.Find(nodes.Find(cell));
 
-    public void Solve()
+    public void Solve(double delta)
     {
         nodeVoltages.Clear();
         Dictionary<Vector2I, Island> islands = new();
@@ -148,7 +148,9 @@ public partial class CircuitManager : Node2D
                     nodes,
                     island.NumNodes,
                     island.VSourceCount,
-                    vSourceIndex
+                    vSourceIndex,
+                    comp,
+                    delta
                 );
                 if (comp.computer.IsVSource)
                     vSourceIndex++;
@@ -167,6 +169,7 @@ public partial class CircuitManager : Node2D
             int vs = 0;
             foreach (var comp in island.Comps)
             {
+                comp.V = comp.computer.ComputeVoltage(comp.pins, nodes, nodeVoltages);
                 if (comp.computer.IsVSource)
                 {
                     comp.Current = x[island.NumNodes + vs];
@@ -179,7 +182,7 @@ public partial class CircuitManager : Node2D
         GD.Print("---END_RUN---");
     }
 
-    public void RecomputeDSU()
+    public void RecomputeDSU(double delta)
     {
         nodes.Clear();
         foreach (Wire w in wires)
@@ -230,7 +233,7 @@ public partial class CircuitManager : Node2D
                 }
             }
         }
-        Solve();
+        Solve(delta);
     }
 
     public Vector2I PositionToCell(Vector2 worldPosition)
@@ -244,7 +247,7 @@ public partial class CircuitManager : Node2D
         return new Vector2(g.X - 0.5f, g.Y - 0.5f) * gridSize + origin;
     }
 
-    public void PlaceComponent(PackedScene p)
+    public void PlaceComponent(PackedScene p, double delta)
     {
         Vector2I cell = PositionToCell(GetGlobalMousePosition());
         if (occupied.ContainsKey(cell))
@@ -261,7 +264,7 @@ public partial class CircuitManager : Node2D
             GD.Print(pin.Cell);
             pins.Add(pin.Cell, pin);
         }
-        RecomputeDSU();
+        RecomputeDSU(delta);
     }
 
     public override void _Draw()

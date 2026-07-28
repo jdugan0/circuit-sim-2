@@ -17,6 +17,9 @@ public partial class Component : Node2D
 
     public double? Current = null;
 
+    public double V = 0;
+    public double dt;
+
     public override void _Ready()
     {
         foreach (Vector2I p in pinResources)

@@ -17,6 +17,17 @@ public partial class ComponentComputer : Resource
         DisjointSet<Vector2I> nodes,
         int n,
         int m,
-        int vSourceIndex
+        int vSourceIndex,
+        Component state,
+        double delta
     ) { }
+
+    public virtual double ComputeVoltage(
+        List<Pin> pins,
+        DisjointSet<Vector2I> nodes,
+        Dictionary<Vector2I, double> nodeVoltages
+    )
+    {
+        return 0;
+    }
 }
