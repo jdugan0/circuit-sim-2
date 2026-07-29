@@ -47,4 +47,20 @@ public partial class ResistorComponent : ComponentComputer
         var v2 = nodeVoltages[nodes.Find(pins[1].Cell)];
         return v1 - v2;
     }
+
+    public override double? ComputeCurrent(
+        Vector<double> x,
+        List<Pin> pins,
+        DisjointSet<Vector2I> nodes,
+        Dictionary<Vector2I, double> nodeVoltages,
+        int n,
+        int vSourceIndex,
+        Component state,
+        double delta
+    )
+    {
+        var v1 = nodeVoltages[nodes.Find(pins[0].Cell)];
+        var v2 = nodeVoltages[nodes.Find(pins[1].Cell)];
+        return (v1 - v2) / R;
+    }
 }

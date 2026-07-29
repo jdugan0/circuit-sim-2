@@ -157,6 +157,7 @@ public partial class CircuitManager : Node2D
             }
 
             Vector<double> x = A.Solve(b);
+            nodeVoltages[island.Nodes[0]] = 0;
             foreach (var node in island.Nodes)
             {
                 int i = island.Index[node];
@@ -169,17 +170,29 @@ public partial class CircuitManager : Node2D
             int vs = 0;
             foreach (var comp in island.Comps)
             {
+                comp.Current = comp.computer.ComputeCurrent(
+                    x,
+                    comp.pins,
+                    nodes,
+                    nodeVoltages,
+                    island.NumNodes,
+                    vs,
+                    comp,
+                    delta
+                );
                 comp.V = comp.computer.ComputeVoltage(comp.pins, nodes, nodeVoltages);
+                GD.Print($"{comp.computer.GetType().Name}: V={comp.V}, I={comp.Current}");
                 if (comp.computer.IsVSource)
-                {
-                    comp.Current = x[island.NumNodes + vs];
-                    GD.Print($"I_{vs}: {comp.Current}");
                     vs++;
-                }
             }
             GD.Print("-------");
         }
         GD.Print("---END_RUN---");
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        Solve(delta);
     }
 
     public void RecomputeDSU(double delta)
@@ -233,7 +246,7 @@ public partial class CircuitManager : Node2D
                 }
             }
         }
-        Solve(delta);
+        // Solve(delta);
     }
 
     public Vector2I PositionToCell(Vector2 worldPosition)

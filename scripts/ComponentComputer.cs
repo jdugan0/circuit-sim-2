@@ -30,4 +30,20 @@ public partial class ComponentComputer : Resource
     {
         return 0;
     }
+
+    // Passive sign convention: positive current enters pins[0] and leaves pins[1].
+    // Returns null when the component type does not report a current.
+    public virtual double? ComputeCurrent(
+        Vector<double> x,
+        List<Pin> pins,
+        DisjointSet<Vector2I> nodes,
+        Dictionary<Vector2I, double> nodeVoltages,
+        int n,
+        int vSourceIndex,
+        Component state,
+        double delta
+    )
+    {
+        return null;
+    }
 }
