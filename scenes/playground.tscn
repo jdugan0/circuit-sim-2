@@ -5,6 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://c0103fhniiui0" path="res://prefabs/Wire.tscn" id="3_kddj0"]
 [ext_resource type="PackedScene" uid="uid://bm0cbk6hla6cg" path="res://prefabs/Components/Resistor.tscn" id="4_mm0a5"]
 [ext_resource type="PackedScene" uid="uid://iq36c27tnf6p" path="res://prefabs/Components/Battery.tscn" id="5_o6wi6"]
+[ext_resource type="PackedScene" uid="uid://b8xk3n2qrvm4d" path="res://prefabs/Components/Capacitor.tscn" id="6_cap01"]
+[ext_resource type="PackedScene" uid="uid://dq7wn5tzcx1ka" path="res://prefabs/Components/Inductor.tscn" id="7_ind01"]
 
 [node name="Playground" type="Node2D" unique_id=262439809]
 script = ExtResource("1_hddm4")
@@ -15,5 +17,7 @@ pin = ExtResource("2_qchbg")
 wire = ExtResource("3_kddj0")
 resistor = ExtResource("4_mm0a5")
 battery = ExtResource("5_o6wi6")
+capacitor = ExtResource("6_cap01")
+inductor = ExtResource("7_ind01")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1020536751]

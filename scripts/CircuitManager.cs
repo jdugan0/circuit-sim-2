@@ -44,6 +44,12 @@ public partial class CircuitManager : Node2D
     [Export]
     public PackedScene battery;
 
+    [Export]
+    public PackedScene capacitor;
+
+    [Export]
+    public PackedScene inductor;
+
     public override void _Ready()
     {
         instance = this;
@@ -58,6 +64,14 @@ public partial class CircuitManager : Node2D
         if (Input.IsActionJustPressed("B"))
         {
             PlaceComponent(battery, delta);
+        }
+        if (Input.IsActionJustPressed("C"))
+        {
+            PlaceComponent(capacitor, delta);
+        }
+        if (Input.IsActionJustPressed("L"))
+        {
+            PlaceComponent(inductor, delta);
         }
         QueueRedraw();
         Vector2I mouseCell = PositionToCell(GetGlobalMousePosition());

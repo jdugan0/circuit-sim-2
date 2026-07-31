@@ -31,4 +31,12 @@ public partial class Component : Node2D
             pins.Add(pObj);
         }
     }
+
+    public override void _Process(double delta)
+    {
+        if (computer is InductorComponent)
+        {
+            GD.Print($"V:{V}, I:{Current}");
+        }
+    }
 }
