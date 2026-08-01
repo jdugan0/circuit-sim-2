@@ -178,7 +178,6 @@ public partial class CircuitManager : Node2D
                 if (i >= 0)
                 {
                     nodeVoltages[node] = x[i];
-                    GD.Print($"V_{i}: {x[i]}");
                 }
             }
             int vs = 0;
@@ -195,13 +194,10 @@ public partial class CircuitManager : Node2D
                     delta
                 );
                 comp.V = comp.computer.ComputeVoltage(comp.pins, nodes, nodeVoltages);
-                GD.Print($"{comp.computer.GetType().Name}: V={comp.V}, I={comp.Current}");
                 if (comp.computer.IsVSource)
                     vs++;
             }
-            GD.Print("-------");
         }
-        GD.Print("---END_RUN---");
     }
 
     public override void _PhysicsProcess(double delta)
@@ -233,19 +229,11 @@ public partial class CircuitManager : Node2D
             }
             nodes.Union(w.Start, w.End);
         }
-        GD.Print("=== RecomputeDSU ===");
-        GD.Print($"pins cells: {string.Join(", ", pins.Keys)}");
         foreach (Wire w in wires)
-            GD.Print(
-                $"wire {w.Start} -> {w.End}  (startIsPin={pins.ContainsKey(w.Start)}, endIsPin={pins.ContainsKey(w.End)})"
-            );
         foreach (Component comp in components)
         {
             var c0 = comp.pins[0].Cell;
             var c1 = comp.pins[1].Cell;
-            GD.Print(
-                $"{comp.computer.GetType().Name}: pin0 cell {c0} root {nodes.Find(c0)}, pin1 cell {c1} root {nodes.Find(c1)}"
-            );
         }
         connected.Clear();
         foreach (Component comp in components)
@@ -288,7 +276,6 @@ public partial class CircuitManager : Node2D
         occupied.Add(cell, c);
         foreach (Pin pin in c.pins)
         {
-            GD.Print(pin.Cell);
             pins.Add(pin.Cell, pin);
         }
         RecomputeDSU(delta);

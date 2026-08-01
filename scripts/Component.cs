@@ -26,7 +26,6 @@ public partial class Component : Node2D
             Pin pObj = pin.Instantiate<Pin>();
             pObj.parent = this;
             AddChild(pObj);
-            GD.Print($"OFFSET: {(Vector2)p * CircuitManager.instance.gridSize}");
             pObj.GlobalPosition = GlobalPosition + (Vector2)p * CircuitManager.instance.gridSize;
             pins.Add(pObj);
         }
@@ -34,7 +33,7 @@ public partial class Component : Node2D
 
     public override void _Process(double delta)
     {
-        if (computer is InductorComponent)
+        if (computer is CapacitorComponent)
         {
             GD.Print($"V:{V}, I:{Current}");
         }
