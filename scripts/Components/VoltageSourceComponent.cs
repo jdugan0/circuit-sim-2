@@ -22,7 +22,8 @@ public partial class VoltageSourceComponent : ComponentComputer
         int m,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
         var pos = nodeIndex[nodes.Find(pins[0].Cell)];
@@ -50,7 +51,7 @@ public partial class VoltageSourceComponent : ComponentComputer
         return V;
     }
 
-    public override double? ComputeCurrent(
+    public override double ComputeCurrent(
         Vector<double> x,
         List<Pin> pins,
         DisjointSet<Vector2I> nodes,
@@ -58,7 +59,8 @@ public partial class VoltageSourceComponent : ComponentComputer
         int n,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
         return x[n + vSourceIndex];

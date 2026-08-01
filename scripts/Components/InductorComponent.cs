@@ -20,11 +20,11 @@ public partial class InductorComponent : ComponentComputer
         int m,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
-        double g = delta / L;
-        double Ieq = state.Current ?? 0;
+        (double g, double Ieq) = TrBdf2.Inductive(stage, L, state, delta);
         var n1 = nodeIndex[nodes.Find(pins[0].Cell)];
         var n2 = nodeIndex[nodes.Find(pins[1].Cell)];
         if (n1 >= 0)
@@ -52,7 +52,7 @@ public partial class InductorComponent : ComponentComputer
         return nodeVoltages[nodes.Find(pins[0].Cell)] - nodeVoltages[nodes.Find(pins[1].Cell)];
     }
 
-    public override double? ComputeCurrent(
+    public override double ComputeCurrent(
         Vector<double> x,
         List<Pin> pins,
         DisjointSet<Vector2I> nodes,
@@ -60,11 +60,13 @@ public partial class InductorComponent : ComponentComputer
         int n,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
         var v1 = nodeVoltages[nodes.Find(pins[0].Cell)];
         var v2 = nodeVoltages[nodes.Find(pins[1].Cell)];
-        return (state.Current ?? 0) + delta / L * (v1 - v2);
+        var (g, I0) = TrBdf2.Inductive(stage, L, state, delta);
+        return g * (v1 - v2) + I0;
     }
 }

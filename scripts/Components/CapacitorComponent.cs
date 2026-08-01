@@ -20,17 +20,17 @@ public partial class CapacitorComponent : ComponentComputer
         int m,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
-        double g = C / delta;
-        double Ieq = g * state.V;
+        (double g, double Ieq) = TrBdf2.Capacitive(stage, C, state, delta);
         var n1 = nodeIndex[nodes.Find(pins[0].Cell)];
         var n2 = nodeIndex[nodes.Find(pins[1].Cell)];
         if (n1 >= 0)
-            b[n1] += Ieq;
+            b[n1] -= Ieq;
         if (n2 >= 0)
-            b[n2] -= Ieq;
+            b[n2] += Ieq;
 
         if (n1 >= 0)
             A[n1, n1] += g;
@@ -52,7 +52,7 @@ public partial class CapacitorComponent : ComponentComputer
         return nodeVoltages[nodes.Find(pins[0].Cell)] - nodeVoltages[nodes.Find(pins[1].Cell)];
     }
 
-    public override double? ComputeCurrent(
+    public override double ComputeCurrent(
         Vector<double> x,
         List<Pin> pins,
         DisjointSet<Vector2I> nodes,
@@ -60,11 +60,13 @@ public partial class CapacitorComponent : ComponentComputer
         int n,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
         var v1 = nodeVoltages[nodes.Find(pins[0].Cell)];
         var v2 = nodeVoltages[nodes.Find(pins[1].Cell)];
-        return C / delta * (v1 - v2 - state.V);
+        var (g, I0) = TrBdf2.Capacitive(stage, C, state, delta);
+        return g * (v1 - v2) + I0;
     }
 }

@@ -19,7 +19,8 @@ public partial class ComponentComputer : Resource
         int m,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     ) { }
 
     public virtual double ComputeVoltage(
@@ -31,9 +32,7 @@ public partial class ComponentComputer : Resource
         return 0;
     }
 
-    // Passive sign convention: positive current enters pins[0] and leaves pins[1].
-    // Returns null when the component type does not report a current.
-    public virtual double? ComputeCurrent(
+    public virtual double ComputeCurrent(
         Vector<double> x,
         List<Pin> pins,
         DisjointSet<Vector2I> nodes,
@@ -41,9 +40,10 @@ public partial class ComponentComputer : Resource
         int n,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
-        return null;
+        return 0;
     }
 }

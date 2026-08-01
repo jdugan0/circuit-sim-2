@@ -151,52 +151,65 @@ public partial class CircuitManager : Node2D
 
             var A = Matrix<double>.Build.Dense(island.Size, island.Size);
             Vector<double> b = Vector<double>.Build.Dense(island.Size);
-            int vSourceIndex = 0;
-            foreach (var comp in island.Comps)
+            void Compute(int stage)
             {
-                comp.computer.Stamp(
-                    A,
-                    b,
-                    island.Index,
-                    comp.pins,
-                    nodes,
-                    island.NumNodes,
-                    island.VSourceCount,
-                    vSourceIndex,
-                    comp,
-                    delta
-                );
-                if (comp.computer.IsVSource)
-                    vSourceIndex++;
-            }
-
-            Vector<double> x = A.Solve(b);
-            nodeVoltages[island.Nodes[0]] = 0;
-            foreach (var node in island.Nodes)
-            {
-                int i = island.Index[node];
-                if (i >= 0)
+                int vSourceIndex = 0;
+                foreach (var comp in island.Comps)
                 {
-                    nodeVoltages[node] = x[i];
+                    comp.computer.Stamp(
+                        A,
+                        b,
+                        island.Index,
+                        comp.pins,
+                        nodes,
+                        island.NumNodes,
+                        island.VSourceCount,
+                        vSourceIndex,
+                        comp,
+                        delta,
+                        stage
+                    );
+                    if (comp.computer.IsVSource)
+                        vSourceIndex++;
+                }
+
+                var x = A.Solve(b);
+                nodeVoltages[island.Nodes[0]] = 0;
+                foreach (var node in island.Nodes)
+                {
+                    int i = island.Index[node];
+                    if (i >= 0)
+                    {
+                        nodeVoltages[node] = x[i];
+                    }
+                }
+                int vs = 0;
+                foreach (var comp in island.Comps)
+                {
+                    (stage == 0 ? ref comp.Ig : ref comp.I) = comp.computer.ComputeCurrent(
+                        x,
+                        comp.pins,
+                        nodes,
+                        nodeVoltages,
+                        island.NumNodes,
+                        vs,
+                        comp,
+                        delta,
+                        stage
+                    );
+                    (stage == 0 ? ref comp.Vg : ref comp.V) = comp.computer.ComputeVoltage(
+                        comp.pins,
+                        nodes,
+                        nodeVoltages
+                    );
+                    if (comp.computer.IsVSource)
+                        vs++;
                 }
             }
-            int vs = 0;
-            foreach (var comp in island.Comps)
-            {
-                comp.Current = comp.computer.ComputeCurrent(
-                    x,
-                    comp.pins,
-                    nodes,
-                    nodeVoltages,
-                    island.NumNodes,
-                    vs,
-                    comp,
-                    delta
-                );
-                comp.V = comp.computer.ComputeVoltage(comp.pins, nodes, nodeVoltages);
-                if (comp.computer.IsVSource)
-                    vs++;
-            }
+            Compute(0);
+            A.Clear();
+            b.Clear();
+            Compute(1);
         }
     }
 

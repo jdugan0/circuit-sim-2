@@ -15,9 +15,13 @@ public partial class Component : Node2D
     [Export]
     public ComponentComputer computer;
 
-    public double? Current = null;
+    public double I = 0;
 
     public double V = 0;
+
+    // Values at intermediate timestep gamma.
+    public double Vg = 0;
+    public double Ig = 0;
 
     public override void _Ready()
     {
@@ -35,7 +39,7 @@ public partial class Component : Node2D
     {
         if (computer is CapacitorComponent)
         {
-            GD.Print($"V:{V}, I:{Current}");
+            GD.Print($"V:{V}, I:{I}");
         }
     }
 }

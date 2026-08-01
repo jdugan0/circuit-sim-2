@@ -20,7 +20,8 @@ public partial class ResistorComponent : ComponentComputer
         int m,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
         var n1 = nodeIndex[nodes.Find(pins[0].Cell)];
@@ -48,7 +49,7 @@ public partial class ResistorComponent : ComponentComputer
         return v1 - v2;
     }
 
-    public override double? ComputeCurrent(
+    public override double ComputeCurrent(
         Vector<double> x,
         List<Pin> pins,
         DisjointSet<Vector2I> nodes,
@@ -56,7 +57,8 @@ public partial class ResistorComponent : ComponentComputer
         int n,
         int vSourceIndex,
         Component state,
-        double delta
+        double delta,
+        int stage
     )
     {
         var v1 = nodeVoltages[nodes.Find(pins[0].Cell)];
